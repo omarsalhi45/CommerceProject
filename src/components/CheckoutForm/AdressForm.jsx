@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { InputLabel, Select, MenuItem, Button, Grid, Typography } from '@material-ui/core'
+import { InputLabel, Select, MenuItem, Button, Grid, Typography, TextField } from '@material-ui/core'
 import { useForm, FormProvider } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import FormInput from './CustomTextField'
 
 import { commerce } from '../../lib/commerce'
 
-const AdressForm = ({ checkoutToken }) => {
+const AdressForm = ({ checkoutToken, next }) => {
     const methods = useForm()
     const [shippingCountries, setShippingCountries] = useState([])
     const [shippingCountry, setShippingCountry] = useState('')
@@ -16,7 +17,7 @@ const AdressForm = ({ checkoutToken }) => {
 
     const countries = Object.entries(shippingCountries).map(([code, name]) => ({ id: code, label: name }))
     const subdivisions = Object.entries(shippingSubdivisions).map(([code, name]) => ({ id: code, label: name }))
-    const options = shippingOptions.map((sO)=>({id : sO.id, label : `${sO.description} - (${sO.price.formatted_with_symbol})`}))
+    const options = shippingOptions.map((sO) => ({ id: sO.id, label: `${sO.description} - (${sO.price.formatted_with_symbol})` }))
 
     const fetchShippingCountries = async (checkoutTokenId) => {
         const { countries } = await commerce.services.localeListShippingCountries(checkoutTokenId)
@@ -29,9 +30,9 @@ const AdressForm = ({ checkoutToken }) => {
         setShippingSubdivisions(subdivisions)
         setShippingSubdivision(Object.keys(subdivisions)[0])
     }
-    
-    const fetchShippingOptions =async(checkoutTokenId,country,region=null)=>{
-        const options = await commerce.checkout.getShippingOptions(checkoutTokenId,{country,region})
+
+    const fetchShippingOptions = async (checkoutTokenId, country, region = null) => {
+        const options = await commerce.checkout.getShippingOptions(checkoutTokenId, { country, region })
         setShippingOptions(options)
         setShippingOption(options[0].id)
     }
@@ -46,7 +47,7 @@ const AdressForm = ({ checkoutToken }) => {
     }, [shippingCountry])
 
     useEffect(() => {
-        if (shippingSubdivision) fetchShippingOptions(checkoutToken.id,shippingCountry,shippingSubdivision)
+        if (shippingSubdivision) fetchShippingOptions(checkoutToken.id, shippingCountry, shippingSubdivision)
 
     }, [shippingSubdivision])
 
@@ -54,14 +55,27 @@ const AdressForm = ({ checkoutToken }) => {
         <>
             <Typography variant="h6" gutterBottom>Shippng Adress</Typography>
             <FormProvider {...methods}>
-                <form onSubmit=''>
+                <form onSubmit={methods.handleSubmit((data) => next({ ...data, shippingCountry, shippingSubdivision, shippingOption }))}>
                     <Grid container spacing={3}>
-                        <FormInput name="firstName" label="First name" />
-                        <FormInput name="lastName" label="Last name" />
-                        <FormInput name="address1" label="Address" />
-                        <FormInput name="email" label="Email" />
-                        <FormInput name="city" label="City" />
-                        <FormInput name="zip" label="Zip / Postal code" />
+                        <Grid item xs={12} sm={6}>
+                            <TextField {...methods.register("firstName")} label="First name" />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField {...methods.register("lastName")} label="Last name" />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField {...methods.register("address1")} label="Address" />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <TextField {...methods.register("email")} type='email' label="Email" />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField {...methods.register("city")} label="City" />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField {...methods.register("zip")} label="Zip / Postal code" />
+                        </Grid>
                         <Grid item xs={12} sm={6}>
                             <InputLabel>Shipping Country</InputLabel>
                             <Select value={shippingCountry} fullWidth onChange={(e) => setShippingCountry(e.target.value)}>
@@ -87,6 +101,12 @@ const AdressForm = ({ checkoutToken }) => {
                             </Select>
                         </Grid>
                     </Grid>
+                    <br />
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Button component={Link} to="/cart" variant="outlined">Back to Cart</Button>
+                        <Button type="submit" variant="contained" color="primary">Next</Button>
+
+                    </div>
                 </form>
             </FormProvider>
         </>
